@@ -44,6 +44,7 @@ export default function BookViewer({ shareId, book }: { shareId: string; book: B
                 borderRadius: 14,
                 cursor: "pointer",
                 boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
+                imageOrientation: "from-image",
               }}
             />
           )}

@@ -88,6 +88,34 @@ export const allFeedback = query({
   },
 });
 
+// Admin cleanup: remove a book, its pages/stored files, and its feedback.
+// Run: npx convex run books:deleteBook '{"shareId": "<id>"}' --prod
+export const deleteBook = mutation({
+  args: { shareId: v.string() },
+  handler: async (ctx, { shareId }) => {
+    const book = await ctx.db
+      .query("books")
+      .withIndex("by_shareId", (q) => q.eq("shareId", shareId))
+      .unique();
+    if (!book) return "not found";
+    const pages = await ctx.db
+      .query("pages")
+      .withIndex("by_book", (q) => q.eq("bookId", book._id))
+      .collect();
+    for (const p of pages) {
+      await ctx.storage.delete(p.storageId);
+      await ctx.db.delete(p._id);
+    }
+    const feedback = await ctx.db
+      .query("feedback")
+      .withIndex("by_book", (q) => q.eq("bookId", book._id))
+      .collect();
+    for (const f of feedback) await ctx.db.delete(f._id);
+    await ctx.db.delete(book._id);
+    return `deleted book + ${pages.length} pages + ${feedback.length} feedback`;
+  },
+});
+
 // Internal plumbing for the HTTP actions.
 export const createBook = internalMutation({
   args: {
