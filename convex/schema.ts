@@ -26,4 +26,19 @@ export default defineSchema({
     tapX: v.optional(v.number()), // normalized 0-1
     tapY: v.optional(v.number()),
   }).index("by_book", ["bookId"]),
+
+  // Async judge jobs (submitted by the phone from a short bg_refresh wake,
+  // judged server-side via waitUntil, collected on a later wake). Sheets are
+  // NOT stored (Convex 1MB doc cap); only status + result.
+  judgeJobs: defineTable({
+    jobId: v.string(),
+    status: v.string(), // "pending" | "done" | "failed"
+    monthLabel: v.string(),
+    count: v.number(),
+    book: v.optional(v.any()),
+    usage: v.optional(v.any()),
+    error: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_jobId", ["jobId"]),
 });

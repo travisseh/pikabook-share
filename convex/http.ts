@@ -66,6 +66,44 @@ http.route({
   }),
 });
 
+// Async judge job store, written by the Vercel judge server (submit + waitUntil)
+// and read by the phone's collect step. Shared secret keeps random writers out.
+http.route({
+  path: "/judge-job",
+  method: "POST",
+  handler: httpAction(async (ctx, req) => {
+    if (req.headers.get("x-judge-secret") !== (process.env.JUDGE_JOB_SECRET ?? "")) {
+      return json({ error: "forbidden" }, 403);
+    }
+    const body = await req.json();
+    if (typeof body?.jobId !== "string" || typeof body?.status !== "string") {
+      return json({ error: "need jobId, status" }, 400);
+    }
+    await ctx.runMutation(internal.jobs.upsert, {
+      jobId: body.jobId,
+      status: body.status,
+      monthLabel: body.monthLabel,
+      count: body.count,
+      book: body.book,
+      usage: body.usage,
+      error: body.error,
+    });
+    return json({ ok: true });
+  }),
+});
+
+http.route({
+  path: "/judge-job",
+  method: "GET",
+  handler: httpAction(async (ctx, req) => {
+    const jobId = new URL(req.url).searchParams.get("jobId");
+    if (!jobId) return json({ error: "need jobId" }, 400);
+    const job = await ctx.runQuery(api.jobs.get, { jobId });
+    if (!job) return json({ error: "unknown job" }, 404);
+    return json(job);
+  }),
+});
+
 function json(obj: unknown, status = 200): Response {
   return new Response(JSON.stringify(obj), {
     status,
