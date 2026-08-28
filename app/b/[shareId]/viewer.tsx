@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import posthog from "posthog-js";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 
@@ -17,8 +18,26 @@ const REACTIONS: [string, string][] = [
   ["cut", "✂️ Cut this one"],
 ];
 
+let phInit = false;
+function track(event: string, props: Record<string, unknown> = {}) {
+  if (typeof window === "undefined") return;
+  if (!phInit) {
+    posthog.init("phc_omBAXECCW6N5Cr6YZovQYJpC6qNt4oCQ9tvkdiX9PsuR", {
+      api_host: "https://us.i.posthog.com",
+      capture_pageview: false,
+    });
+    posthog.register({ platform: "web", app_variant: "share_viewer" });
+    phInit = true;
+  }
+  posthog.capture(event, props);
+}
+
 export default function BookViewer({ shareId, book }: { shareId: string; book: Book }) {
   const [feedbackFor, setFeedbackFor] = useState<number | null | "closed">("closed");
+  useEffect(() => {
+    track("book_viewed", { pages: book.pages.length, viewer: "share_page" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [counts, setCounts] = useState<Record<number, number>>(
     Object.fromEntries(book.pages.map((p) => [p.page, p.feedbackCount]))
   );
@@ -66,6 +85,9 @@ export default function BookViewer({ shareId, book }: { shareId: string; book: B
           shareId={shareId}
           page={feedbackFor}
           onDone={(submitted) => {
+            if (submitted) {
+              track("feedback_posted", { page: feedbackFor ?? -1, viewer: "share_page" });
+            }
             if (submitted && feedbackFor !== null) {
               setCounts((c) => ({ ...c, [feedbackFor]: (c[feedbackFor] ?? 0) + 1 }));
             }
