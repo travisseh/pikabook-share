@@ -30,6 +30,23 @@ export default defineSchema({
   // Async judge jobs (submitted by the phone from a short bg_refresh wake,
   // judged server-side via waitUntil, collected on a later wake). Sheets are
   // NOT stored (Convex 1MB doc cap); only status + result.
+  // Web try-it jobs: photos uploaded from pikabook-site /try, processed by the
+  // Railway worker, result lands in books/pages so the share viewer just works.
+  webJobs: defineTable({
+    jobId: v.string(),
+    status: v.string(), // "uploading" | "queued" | "processing" | "done" | "failed"
+    progressText: v.optional(v.string()),
+    photoCount: v.number(),
+    storageIds: v.array(v.id("_storage")),
+    dates: v.optional(v.array(v.union(v.string(), v.null()))), // ISO per photo, parallel to storageIds
+    resultShareId: v.optional(v.string()),
+    error: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_jobId", ["jobId"])
+    .index("by_status", ["status"]),
+
   judgeJobs: defineTable({
     jobId: v.string(),
     status: v.string(), // "pending" | "done" | "failed"

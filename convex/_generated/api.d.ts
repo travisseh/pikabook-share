@@ -10,6 +10,8 @@
 
 import type * as books from "../books.js";
 import type * as http from "../http.js";
+import type * as jobs from "../jobs.js";
+import type * as webJobs from "../webJobs.js";
 
 import type {
   ApiFromModules,
@@ -20,6 +22,8 @@ import type {
 declare const fullApi: ApiFromModules<{
   books: typeof books;
   http: typeof http;
+  jobs: typeof jobs;
+  webJobs: typeof webJobs;
 }>;
 
 /**
