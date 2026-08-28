@@ -4,8 +4,8 @@ Photobook sharing + feedback backend for the [PikaSync POC](https://github.com/t
 
 ## Architecture
 
-- **Convex** (project `pikabook-share`, prod deployment `silent-marmot-268`): tables `books`, `pages` (JPEGs in Convex storage), `feedback`. HTTP actions for the app: `POST /create-book` → shareId + per-page upload URLs, `POST /finalize-book`, `POST /feedback`.
-- **Next.js share page** (Vercel, https://pikabook-share.vercel.app): `/b/[shareId]` renders the book; tapping a photo opens a feedback sheet (reaction + optional text + optional name). No login — the unguessable shareId is the capability.
+- **Convex** (project `pikabook-share`, prod deployment `silent-marmot-268`): tables `books`, `pages` (JPEGs in Convex storage), `feedback`, plus `judgeJobs` (result store for the judge server's async submit/collect endpoints, writes gated by `JUDGE_JOB_SECRET`) and `webJobs` (queue for the pikabook-site `/try` funnel). HTTP actions: `POST /create-book` → shareId + per-page upload URLs, `POST /finalize-book`, `POST /feedback`; `/judge-job` GET/POST for the judge server; `/web-job/{create,enqueue,status}` for the site and `/web-job/{claim,progress,complete,fail}` for the Railway worker (secret-gated).
+- **Next.js share page** (Vercel, https://pikabook-share.vercel.app): `/b/[shareId]` renders the book; tapping a photo opens a feedback sheet (reaction + optional text + optional name). No login — the unguessable shareId is the capability. PostHog tracks `book_viewed` / `feedback_posted` from recipients.
 
 ## Reading feedback
 
